@@ -290,8 +290,9 @@ app.post("/loan/return", requireRole("librarian"), async (req, res) => {
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`[circulation-service] berjalan di port ${PORT}`);
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`jalan di port ${PORT}`);
 });
+
 
 
