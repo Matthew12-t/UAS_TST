@@ -1,0 +1,9 @@
+services:
+  circulation:
+    build: .
+    container_name: circulation-service
+    env_file:
+      - .env
+    ports:
+      - "3002:3002"
+    restart: unless-stopped
