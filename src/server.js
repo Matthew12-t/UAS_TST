@@ -3,8 +3,13 @@ require("dotenv").config();
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const { Pool } = require("pg");
+const cors = require("cors");
+const { setupSwagger } = require("./swagger");
 
 const app = express();
+
+// Enable CORS
+app.use(cors());
 app.use(express.json());
 
 // CONFIG
@@ -17,6 +22,9 @@ const DEFAULT_LOAN_DAYS = parseInt(process.env.DEFAULT_LOAN_DAYS || "7", 10);
 const FINE_PER_DAY = parseInt(process.env.FINE_PER_DAY || "1000", 10);
 
 const DATABASE_URL = process.env.DATABASE_URL || "";
+
+// Setup Swagger 
+setupSwagger(app, jwt, JWT_SECRET);
 
 // DB (Supabase Postgres)
 if (!DATABASE_URL) {
