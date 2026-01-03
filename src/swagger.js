@@ -8,14 +8,19 @@ const swaggerOptions = {
     info: {
       title: "Circulation Service API",
       version: "1.0.0",
-      description: "API untuk layanan sirkulasi perpustakaan (peminjaman dan pengembalian buku)",
+      description: `API untuk layanan sirkulasi perpustakaan (peminjaman buku, pengembalian buku, dan perhitunagn denda).
+
+**CATATAN:**
+API yang benar sebenarnya adalah \`http://18223096.tesatepadang.space\`, tetapi karena keterbatasan browser yang menerapkan kebijakan CORS, maka Swagger UI ini menggunakan HTTPS untuk production server.
+
+Untuk testing via Postman atau tools lain yang tidak terkena CORS, bisa menggunakan HTTP maupun HTTPS.`,
       contact: {
         name: "Library System"
       }
     },
     servers: [
       {
-        url: "http://18223096.tesatepadang.space",
+        url: "https://18223096.tesatepadang.space",
         description: "Production server"
       },
       {
@@ -549,7 +554,6 @@ const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Setup Swagger routes
 function setupSwagger(app, jwt, JWT_SECRET) {
-  // Swagger UI route (tanpa auth)
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     explorer: true,
     customCss: '.swagger-ui .topbar { display: none }',
