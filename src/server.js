@@ -38,6 +38,18 @@ function makeLoanId() {
   return `L-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
 }
 
+function isValidUserId(val) {
+  return typeof val === "string" && val.trim().length > 0;
+}
+
+function isValidBookId(val) {
+  return Number.isInteger(val) && val > 0;
+}
+
+function isValidLoanId(val) {
+  return typeof val === "string" && val.trim().length > 0;
+}
+
 // AUTH: Login dummy (untuk test Postman)
 app.post("/auth/login", (req, res) => {
   if (!JWT_SECRET) {
@@ -52,6 +64,13 @@ app.post("/auth/login", (req, res) => {
     return res.status(400).json({
       error: "PermintaanTidakValid",
       message: "userId dan role wajib diisi."
+    });
+  }
+
+  if (!isValidUserId(String(userId))) {
+    return res.status(400).json({
+      error: "PermintaanTidakValid",
+      message: "userId harus berupa string yang tidak kosong."
     });
   }
 
@@ -128,10 +147,31 @@ app.get("/health", async (req, res) => {
 app.post("/loan/create", requireRole("member", "librarian"), async (req, res) => {
   const { userId, bookId, days } = req.body || {};
 
-  if (!userId || !bookId) {
+  if (!userId || bookId === undefined || bookId === null) {
     return res.status(400).json({
       error: "PermintaanTidakValid",
       message: "userId dan bookId wajib diisi."
+    });
+  }
+
+  if (!isValidUserId(String(userId))) {
+    return res.status(400).json({
+      error: "PermintaanTidakValid",
+      message: "userId harus berupa string yang tidak kosong."
+    });
+  }
+
+  if (!isValidBookId(bookId)) {
+    return res.status(400).json({
+      error: "PermintaanTidakValid",
+      message: "bookId harus berupa bilangan bulat positif."
+    });
+  }
+
+  if (days !== undefined && (!Number.isInteger(days) || days < 1)) {
+    return res.status(400).json({
+      error: "PermintaanTidakValid",
+      message: "days harus berupa bilangan bulat positif."
     });
   }
 
@@ -157,6 +197,18 @@ app.post("/loan/create", requireRole("member", "librarian"), async (req, res) =>
       });
     }
 
+    const bookBorrowed = await client.query(
+      "select loan_id from public.loans where book_id=$1 and returned_at is null",
+      [bookId]
+    );
+
+    if (bookBorrowed.rowCount > 0) {
+      return res.status(409).json({
+        error: "BukuSedangDipinjam",
+        message: `Buku dengan bookId ${bookId} sedang dipinjam dan belum dikembalikan.`
+      });
+    }
+
     const loanDays = Number.isFinite(days) ? Math.max(1, parseInt(days, 10)) : DEFAULT_LOAN_DAYS;
 
     const loanId = makeLoanId();
@@ -165,13 +217,13 @@ app.post("/loan/create", requireRole("member", "librarian"), async (req, res) =>
     await client.query(
       `insert into public.loans (loan_id, user_id, book_id, due_at)
        values ($1, $2, $3, $4)`,
-      [loanId, String(userId), String(bookId), dueAt.toISOString()]
+      [loanId, String(userId), bookId, dueAt.toISOString()]
     );
 
     return res.status(201).json({
       loanId,
       userId: String(userId),
-      bookId: String(bookId),
+      bookId,
       dueAt: dueAt.toISOString(),
       policy: {
         maxActiveLoans: MAX_ACTIVE_LOANS,
@@ -256,6 +308,13 @@ app.post("/loan/return", requireRole("librarian"), async (req, res) => {
     return res.status(400).json({
       error: "PermintaanTidakValid",
       message: "loanId wajib diisi."
+    });
+  }
+
+  if (!isValidLoanId(String(loanId))) {
+    return res.status(400).json({
+      error: "PermintaanTidakValid",
+      message: "loanId harus berupa string yang tidak kosong."
     });
   }
 
