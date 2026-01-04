@@ -18,7 +18,8 @@ Circulation Service adalah backend API yang dibangun dengan Express.js untuk men
 | Jatuh Tempo Otomatis | Menentukan due date berdasarkan konfigurasi |
 | Perhitungan Denda | Menghitung denda keterlambatan per hari |
 | Pengembalian | Memproses pengembalian buku oleh pustakawan |
-| Autentikasi JWT | Role-based access control (member & librarian) |
+| Autentikasi JWT | Verifikasi identitas user menggunakan JSON Web Token |
+| Otorisasi | Kontrol akses berbasis peran (member & librarian) |
 | Swagger UI | Dokumentasi API interaktif |
 
 ---
@@ -118,14 +119,16 @@ docker-compose down
 
 ---
 
-## Sistem Autentikasi
+## Autentikasi (Authentication)
 
-API menggunakan JWT dengan dua peran:
+API menggunakan JWT (JSON Web Token) untuk autentikasi. Setiap request (kecuali `/auth/login`) harus menyertakan token di header `Authorization`.
 
-| Peran | Hak Akses |
-|-------|-----------|
-| **member** | Membuat peminjaman untuk diri sendiri, melihat denda sendiri |
-| **librarian** | Akses penuh: kelola semua peminjaman, lihat semua denda, proses pengembalian |
+### Cara Kerja
+
+1. Client melakukan login ke `/auth/login` dengan `userId` dan `role`
+2. Server mengembalikan JWT token yang berlaku selama 2 jam (default)
+3. Client menyertakan token di setiap request dengan format: `Authorization: Bearer <token>`
+4. Server memverifikasi token sebelum memproses request
 
 ### Mendapatkan Token
 
@@ -142,6 +145,62 @@ curl -X POST http://localhost:3002/auth/login \
   -H "Content-Type: application/json" \
   -d '{"userId": "lib001", "role": "librarian"}'
 ```
+
+### Respon Login Berhasil
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": "2h",
+  "payload": {
+    "userId": "user123",
+    "role": "member"
+  }
+}
+```
+
+### Menggunakan Token
+
+Sertakan token di header setiap request:
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+## Otorisasi (Authorization)
+
+Setelah autentikasi berhasil, sistem akan memeriksa peran (role) user untuk menentukan akses ke endpoint tertentu.
+
+### Daftar Peran
+
+| Peran | Deskripsi |
+|-------|-----------|
+| **member** | Anggota perpustakaan biasa |
+| **librarian** | Pustakawan dengan akses penuh |
+
+### Hak Akses per Endpoint
+
+| Endpoint | member | librarian |
+|----------|:------:|:---------:|
+| `POST /auth/login` | Ya (tanpa token) | Ya (tanpa token) |
+| `GET /health` | Ya | Ya |
+| `POST /loan/create` | Ya (hanya untuk diri sendiri) | Ya (untuk semua user) |
+| `GET /loan/fines/:userId` | Ya (hanya userId sendiri) | Ya (semua userId) |
+| `POST /loan/return` | Tidak | Ya |
+
+### Batasan Akses Member
+
+1. **Membuat Peminjaman**: Member hanya dapat membuat peminjaman dengan `userId` yang sama dengan `userId` di token JWT
+2. **Melihat Denda**: Member hanya dapat melihat denda untuk `userId` miliknya sendiri
+3. **Pengembalian Buku**: Member tidak dapat memproses pengembalian buku
+
+### Hak Akses Librarian
+
+1. **Membuat Peminjaman**: Dapat membuat peminjaman untuk user mana pun
+2. **Melihat Denda**: Dapat melihat denda semua user
+3. **Pengembalian Buku**: Dapat memproses pengembalian buku
 
 ---
 
@@ -328,11 +387,3 @@ UAS_TST_II3160_18223096/
 ```
 
 ---
-
-## Lisensi
-
-MIT License
-| `JWT_EXPIRES_IN` | Masa berlaku token JWT | Tidak | 2h |
-| `MAX_ACTIVE_LOANS` | Maksimum peminjaman aktif per user | Tidak | 3 |
-| `DEFAULT_LOAN_DAYS` | Durasi peminjaman default dalam hari | Tidak | 7 |
-| `FINE_PER_DAY` | Jumlah denda per hari keterlambatan (IDR) | Tidak | 1000 |
