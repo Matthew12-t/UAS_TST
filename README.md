@@ -4,6 +4,19 @@
 
 ---
 
+## Dokumentasi API (Swagger)
+
+Dokumentasi API interaktif tersedia di Swagger UI:
+
+| Environment | URL |
+|-------------|-----|
+| **Publik** | [http://18223096.tesatepadang.space/api-docs](http://18223096.tesatepadang.space/api-docs) |
+| **Lokal** | [http://localhost:3002/api-docs](http://localhost:3002/api-docs) |
+
+> Gunakan Swagger UI untuk melihat spesifikasi lengkap dan menguji endpoint secara langsung.
+
+---
+
 ## Tentang
 
 Circulation Service adalah backend API yang dibangun dengan Express.js untuk mengelola proses sirkulasi buku di perpustakaan. Service ini menyediakan fitur lengkap mulai dari pembuatan transaksi peminjaman, penentuan jatuh tempo, perhitungan denda keterlambatan, hingga pemrosesan pengembalian buku. Dilengkapi dengan Swagger UI untuk dokumentasi dan testing API secara interaktif.
@@ -209,8 +222,6 @@ Setelah autentikasi berhasil, sistem akan memeriksa peran (role) user untuk mene
 **Base URL Lokal:** `http://localhost:3002`
 
 **Base URL Publik:** `http://18223096.tesatepadang.space`
-
-**Dokumentasi Swagger:** `http://18223096.tesatepadang.space/api-docs`
 
 | Method | Endpoint | Akses | Fungsi |
 |--------|----------|-------|--------|
