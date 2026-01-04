@@ -1,50 +1,65 @@
-# Circulation Service -- Smart Library
+# Circulation Service — Smart Library
 
-Express.js backend API for book loan management (circulation) with Supabase and JWT authentication.
+> Layanan sirkulasi untuk sistem Smart Library yang menangani peminjaman buku, pengembalian, dan perhitungan denda keterlambatan.
 
-## Features
+---
 
-- RESTful API for managing book loans
-- Create loan, return loan, and calculate fines
-- JWT authentication with role-based access control
-- Swagger UI for interactive API documentation
-- Supabase PostgreSQL database
-- Docker support
+## Tentang
+
+Circulation Service adalah backend API yang dibangun dengan Express.js untuk mengelola proses sirkulasi buku di perpustakaan. Service ini menyediakan fitur lengkap mulai dari pembuatan transaksi peminjaman, penentuan jatuh tempo, perhitungan denda keterlambatan, hingga pemrosesan pengembalian buku. Dilengkapi dengan Swagger UI untuk dokumentasi dan testing API secara interaktif.
+
+---
+
+## Fitur Utama
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| Peminjaman Buku | Membuat transaksi peminjaman dengan validasi lengkap |
+| Jatuh Tempo Otomatis | Menentukan due date berdasarkan konfigurasi |
+| Perhitungan Denda | Menghitung denda keterlambatan per hari |
+| Pengembalian | Memproses pengembalian buku oleh pustakawan |
+| Autentikasi JWT | Role-based access control (member & librarian) |
+| Swagger UI | Dokumentasi API interaktif |
+
+---
 
 ## Tech Stack
 
-- Node.js 18+
-- Express.js
-- Supabase (PostgreSQL)
-- JWT (jsonwebtoken)
-- Swagger UI
-- Docker
+| Teknologi | Versi/Keterangan |
+|-----------|------------------|
+| Node.js | 18+ |
+| Express.js | Web framework |
+| PostgreSQL | Via Supabase |
+| JWT | jsonwebtoken |
+| Swagger | swagger-ui-express |
+| Docker | Containerization |
 
-## Prerequisites
+---
 
-- Node.js 18+
-- Docker (optional)
-- Supabase account
+## Prasyarat
 
-## Installation
+Sebelum memulai, pastikan Anda memiliki:
+- Node.js versi 18 atau lebih baru
+- Docker dan Docker Compose (opsional)
+- Akun Supabase untuk database PostgreSQL
 
-1. Clone the repository:
+---
+
+## Cara Instalasi
+
+### 1. Clone Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Matthew12-t/UAS_TST_II3160_18223096.git
 cd UAS_TST_II3160_18223096
 ```
 
-2. Install dependencies:
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-3. Create `.env` file from example:
-```bash
-cp .env.example .env
-```
-
-4. Update `.env` with your credentials:
+### 3. Konfigurasi Environment
+Buat file `.env` dan isi dengan konfigurasi berikut:
 ```env
 PORT=3002
 JWT_SECRET=your-very-secret-jwt-key-change-this-in-production
@@ -55,14 +70,11 @@ FINE_PER_DAY=1000
 DATABASE_URL=postgresql://user:password@host:port/database
 ```
 
-5. Set up Supabase table and policies (see below)
-
-## Supabase Setup
-
-Run this SQL in Supabase SQL Editor:
+### 4. Setup Database
+Jalankan SQL berikut di Supabase SQL Editor:
 
 ```sql
--- Create loans table
+-- Membuat tabel loans untuk menyimpan data peminjaman
 CREATE TABLE loans (
   loan_id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -72,113 +84,185 @@ CREATE TABLE loans (
   returned_at TIMESTAMPTZ
 );
 
--- Enable RLS and add policies
+-- Mengaktifkan Row Level Security
 ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
 
+-- Membuat policy untuk akses tabel
 CREATE POLICY "Allow all operations" ON loans
 FOR ALL USING (true) WITH CHECK (true);
 ```
 
-## Running the Application
+---
 
-### Without Docker:
+## Menjalankan Aplikasi
+
+### Mode Development (tanpa Docker)
 ```bash
 npm start
 ```
 
-### With Docker:
+### Menggunakan Docker
 ```bash
-# Build and run
+# Build dan jalankan container
 docker-compose up --build
 
-# Run in background
+# Jalankan di background
 docker-compose up -d
 
-# View logs
+# Lihat logs
 docker-compose logs -f
 
-# Stop
+# Hentikan container
 docker-compose down
 ```
 
-## Authentication
+---
 
-This API uses JWT (JSON Web Tokens) for authentication with role-based access control.
+## Sistem Autentikasi
 
-### Roles:
-- **member**: Can create loans for themselves and view their own fines
-- **librarian**: Full access (create loans for any user, process returns, view all fines)
+API menggunakan JWT dengan dua peran:
 
-### Generate Token (via /auth/login):
+| Peran | Hak Akses |
+|-------|-----------|
+| **member** | Membuat peminjaman untuk diri sendiri, melihat denda sendiri |
+| **librarian** | Akses penuh: kelola semua peminjaman, lihat semua denda, proses pengembalian |
+
+### Mendapatkan Token
+
+**Login sebagai Member:**
 ```bash
-# Login as member
 curl -X POST http://localhost:3002/auth/login \
   -H "Content-Type: application/json" \
   -d '{"userId": "user123", "role": "member"}'
+```
 
-# Login as librarian
+**Login sebagai Librarian:**
+```bash
 curl -X POST http://localhost:3002/auth/login \
   -H "Content-Type: application/json" \
   -d '{"userId": "lib001", "role": "librarian"}'
 ```
 
-## API Endpoints
+---
 
-You may access the endpoints by initializing the project on your local device or by accessing http://18223096.tesatepadang.space/
+## Daftar Endpoint
 
-Swagger UI documentation is available at: http://18223096.tesatepadang.space/api-docs
+**Base URL Lokal:** `http://localhost:3002`
 
-| Method | Endpoint | Access | Description |
-|--------|----------|--------|-------------|
-| POST | `/auth/login` | Public | Generate JWT token (dummy login for testing) |
-| GET | `/health` | Authenticated | Check service and database health |
-| POST | `/loan/create` | member, librarian | Create a new book loan |
-| GET | `/loan/fines/:userId` | member, librarian | Get fines for a user |
-| POST | `/loan/return` | librarian only | Process book return |
+**Base URL Publik:** `http://18223096.tesatepadang.space`
 
-### Role-Based Access Control:
-- **member**: Can only create loans and view fines for their own `userId`
-- **librarian**: Can create loans for any user, view any user's fines, and process returns
+**Dokumentasi Swagger:** `http://18223096.tesatepadang.space/api-docs`
 
-## Testing
+| Method | Endpoint | Akses | Fungsi |
+|--------|----------|-------|--------|
+| `POST` | `/auth/login` | Publik | Login dan generate token JWT |
+| `GET` | `/health` | Semua user terautentikasi | Cek status service dan database |
+| `POST` | `/loan/create` | member, librarian | Buat peminjaman baru |
+| `GET` | `/loan/fines/:userId` | member (sendiri), librarian (semua) | Lihat denda user |
+| `POST` | `/loan/return` | librarian | Proses pengembalian buku |
 
-All requests (except `/auth/login`) require JWT token in Authorization header:
+---
 
-### Login to get token:
+## Contoh Penggunaan
+
+Gunakan `http://localhost:3002` untuk lokal atau `http://18223096.tesatepadang.space` untuk publik.
+
+### PowerShell
+
+**1. Login dan simpan token:**
 ```powershell
-# Get token as member
+# Lokal
 $response = Invoke-RestMethod -Uri "http://localhost:3002/auth/login" -Method POST -ContentType "application/json" -Body '{"userId":"user123","role":"member"}'
+
+# Publik
+$response = Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/auth/login" -Method POST -ContentType "application/json" -Body '{"userId":"user123","role":"member"}'
+
 $token = $response.token
 ```
 
-### Health check:
+**2. Cek kesehatan service:**
 ```powershell
+# Lokal
 Invoke-RestMethod -Uri "http://localhost:3002/health" -Headers @{Authorization="Bearer $token"}
+
+# Publik
+Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/health" -Headers @{Authorization="Bearer $token"}
 ```
 
-### Create loan (member):
+**3. Buat peminjaman:**
 ```powershell
+# Lokal
 Invoke-RestMethod -Uri "http://localhost:3002/loan/create" -Method POST -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body '{"userId":"user123","bookId":1,"days":7}'
+
+# Publik
+Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/loan/create" -Method POST -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body '{"userId":"user123","bookId":1,"days":7}'
 ```
 
-### Get fines:
+**4. Lihat denda:**
 ```powershell
+# Lokal
 Invoke-RestMethod -Uri "http://localhost:3002/loan/fines/user123" -Headers @{Authorization="Bearer $token"}
+
+# Publik
+Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/loan/fines/user123" -Headers @{Authorization="Bearer $token"}
 ```
 
-### Return loan (librarian only):
+**5. Proses pengembalian (sebagai librarian):**
 ```powershell
-# First login as librarian
+# Lokal
 $libResponse = Invoke-RestMethod -Uri "http://localhost:3002/auth/login" -Method POST -ContentType "application/json" -Body '{"userId":"lib001","role":"librarian"}'
 $libToken = $libResponse.token
-
-# Process return
 Invoke-RestMethod -Uri "http://localhost:3002/loan/return" -Method POST -Headers @{Authorization="Bearer $libToken"} -ContentType "application/json" -Body '{"loanId":"L-1234567890-abc123"}'
+
+# Publik
+$libResponse = Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/auth/login" -Method POST -ContentType "application/json" -Body '{"userId":"lib001","role":"librarian"}'
+$libToken = $libResponse.token
+Invoke-RestMethod -Uri "http://18223096.tesatepadang.space/loan/return" -Method POST -Headers @{Authorization="Bearer $libToken"} -ContentType "application/json" -Body '{"loanId":"L-1234567890-abc123"}'
 ```
 
-## Error Responses
+---
 
-### 401 Unauthorized:
+## Kode Error
+
+### HTTP Status Code
+
+| Kode | Keterangan |
+|------|------------|
+| 400 | Bad Request - Data request tidak valid |
+| 401 | Unauthorized - Token tidak ditemukan atau tidak valid |
+| 403 | Forbidden - Tidak memiliki izin akses |
+| 404 | Not Found - Data tidak ditemukan |
+| 409 | Conflict - Konflik data (batas tercapai atau data duplikat) |
+| 500 | Internal Server Error - Kesalahan server |
+
+### Daftar Error
+
+| Error Code | HTTP | Pesan |
+|------------|:----:|-------|
+| `KonfigurasiServerSalah` | 500 | JWT_SECRET belum diset. Silakan isi JWT_SECRET di .env. |
+| `PermintaanTidakValid` | 400 | userId dan role wajib diisi. |
+| `PermintaanTidakValid` | 400 | userId harus berupa string yang tidak kosong. |
+| `PermintaanTidakValid` | 400 | role harus bernilai "member" atau "librarian". |
+| `PermintaanTidakValid` | 400 | userId dan bookId wajib diisi. |
+| `PermintaanTidakValid` | 400 | bookId harus berupa bilangan bulat positif. |
+| `PermintaanTidakValid` | 400 | days harus berupa bilangan bulat positif. |
+| `PermintaanTidakValid` | 400 | loanId wajib diisi. |
+| `PermintaanTidakValid` | 400 | loanId harus berupa string yang tidak kosong. |
+| `TidakTerautentikasi` | 401 | Token Bearer tidak ditemukan. Tambahkan Authorization: Bearer <token>. |
+| `TidakTerautentikasi` | 401 | Token tidak valid atau sudah kedaluwarsa. |
+| `AksesDitolak` | 403 | Anda tidak memiliki izin untuk mengakses endpoint ini. |
+| `AksesDitolak` | 403 | Member hanya boleh membuat peminjaman untuk userId miliknya sendiri. |
+| `AksesDitolak` | 403 | Member hanya boleh melihat denda untuk userId miliknya sendiri. |
+| `DataTidakDitemukan` | 404 | Data peminjaman tidak ditemukan atau sudah dikembalikan. |
+| `BatasPeminjamanTercapai` | 409 | User sudah memiliki X peminjaman aktif. Batas maksimal adalah Y. |
+| `BukuSedangDipinjam` | 409 | Buku dengan bookId X sedang dipinjam dan belum dikembalikan. |
+| `KesalahanServer` | 500 | Gagal membuat peminjaman. |
+| `KesalahanServer` | 500 | Gagal menghitung denda. |
+| `KesalahanServer` | 500 | Gagal memproses pengembalian. |
+
+### Contoh Respon Error
+
+**401 Unauthorized:**
 ```json
 {
   "error": "TidakTerautentikasi",
@@ -186,50 +270,69 @@ Invoke-RestMethod -Uri "http://localhost:3002/loan/return" -Method POST -Headers
 }
 ```
 
-### 403 Forbidden:
+**403 Forbidden:**
 ```json
 {
   "error": "AksesDitolak",
-  "message": "Anda tidak memiliki izin untuk mengakses endpoint ini."
+  "message": "Member hanya boleh membuat peminjaman untuk userId miliknya sendiri."
 }
 ```
 
-### 400 Bad Request (example):
+**409 Conflict:**
 ```json
 {
-  "error": "PermintaanTidakValid",
-  "message": "userId dan bookId wajib diisi."
+  "error": "BatasPeminjamanTercapai",
+  "message": "User sudah memiliki 3 peminjaman aktif. Batas maksimal adalah 3."
 }
 ```
 
-## Environment Variables
+**500 Internal Server Error:**
+```json
+{
+  "error": "KesalahanServer",
+  "message": "Gagal membuat peminjaman.",
+  "detail": "..."
+}
+```
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes | - |
-| `JWT_SECRET` | Secret key for JWT signing | Yes | - |
-| `PORT` | Server port | No | 3002 |
-| `JWT_EXPIRES_IN` | JWT token expiration | No | 2h |
-| `MAX_ACTIVE_LOANS` | Maximum active loans per user | No | 3 |
-| `DEFAULT_LOAN_DAYS` | Default loan duration in days | No | 7 |
-| `FINE_PER_DAY` | Fine amount per day late (IDR) | No | 1000 |
+---
 
-## Project Structure
+## Konfigurasi Environment
+
+| Variable | Deskripsi | Wajib | Default |
+|----------|-----------|:-----:|:-------:|
+| `DATABASE_URL` | Connection string PostgreSQL Supabase | Ya | - |
+| `JWT_SECRET` | Secret key untuk signing token JWT | Ya | - |
+| `PORT` | Port server | Tidak | 3002 |
+| `JWT_EXPIRES_IN` | Masa berlaku token | Tidak | 2h |
+| `MAX_ACTIVE_LOANS` | Batas peminjaman aktif per user | Tidak | 3 |
+| `DEFAULT_LOAN_DAYS` | Durasi peminjaman default (hari) | Tidak | 7 |
+| `FINE_PER_DAY` | Denda per hari keterlambatan (Rp) | Tidak | 1000 |
+
+---
+
+## Struktur Proyek
 
 ```
-.
+UAS_TST_II3160_18223096/
 ├── src/
-│   ├── server.js          # Main application file
-│   └── swagger.js         # Swagger UI configuration
-├── package.json           # Node.js dependencies
-├── Dockerfile            # Docker configuration
-├── docker-compose.yml    # Docker Compose configuration
-├── .env                  # Environment variables (not in git)
-├── .gitignore            # Git ignore rules
-├── .dockerignore         # Docker ignore rules
-└── README.md             # This file
+│   ├── server.js       # Entry point aplikasi
+│   └── swagger.js      # Konfigurasi Swagger UI
+├── .env                # Environment variables
+├── .gitignore          
+├── .dockerignore       
+├── Dockerfile          # Docker configuration
+├── docker-compose.yml  # Docker Compose setup
+├── package.json        
+└── README.md           
 ```
 
-## License
+---
 
-MIT
+## Lisensi
+
+MIT License
+| `JWT_EXPIRES_IN` | Masa berlaku token JWT | Tidak | 2h |
+| `MAX_ACTIVE_LOANS` | Maksimum peminjaman aktif per user | Tidak | 3 |
+| `DEFAULT_LOAN_DAYS` | Durasi peminjaman default dalam hari | Tidak | 7 |
+| `FINE_PER_DAY` | Jumlah denda per hari keterlambatan (IDR) | Tidak | 1000 |
